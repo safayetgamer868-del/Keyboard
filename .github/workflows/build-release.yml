@@ -1,0 +1,45 @@
+name: Build APK from zip
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unzip project
+        run: unzip -q HeliBoard-4.1-modded.zip
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v3
+
+      - name: Build debug APK
+        working-directory: HeliBoard-4.1
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Verify APK
+        run: |
+          APK=$(ls HeliBoard-4.1/app/build/outputs/apk/debug/*.apk | head -n1)
+          ls -l "$APK"
+          unzip -tq "$APK"
+          cp "$APK" HeliBoard-mod.apk
+
+      - name: Publish release with APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mod-${{ github.run_number }}
+          name: HeliBoard mod #${{ github.run_number }}
+          files: HeliBoard-mod.apk
+          
