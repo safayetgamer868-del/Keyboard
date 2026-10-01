@@ -18,10 +18,10 @@ jobs:
           unzip -q -o "$(ls *.zip | head -1)"
           ls -la TypeFlow
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Set up Gradle
@@ -29,12 +29,18 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Check Java and Gradle
+        run: |
+          java -version
+          gradle --version
+
       - name: Accept Android licenses
         run: yes | sdkmanager --licenses || true
 
       - name: Build Debug APK
         working-directory: TypeFlow
         run: gradle assembleDebug --console=plain
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
