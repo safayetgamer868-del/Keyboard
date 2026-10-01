@@ -1,4 +1,4 @@
-name: Build TypeFlow APK
+name: Build SafariFlow APK
 
 on:
   push:
@@ -10,94 +10,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Find and unzip TypeFlow project
+      - name: Find ZIP
         run: |
           set -e
+          ls -lah *.zip
 
-          ZIP_FILE="TypeFlow-Source.zip"
-
-          if [ ! -f "$ZIP_FILE" ]; then
-            echo "ERROR: $ZIP_FILE not found!"
-            find . -maxdepth 2 -type f -name "*.zip" -print
-            exit 1
-          fi
-
-          rm -rf TypeFlow
-          unzip -q -o "$ZIP_FILE"
-
-          echo "Project extracted:"
-          ls -la TypeFlow
-
-      - name: Fix ViewStyling.kt
+      - name: Extract SafariFlow
         run: |
           set -e
+          rm -rf SafariFlow
+          unzip -q -o SafariFlow-Browser.zip
+          ls -la SafariFlow
 
-          FILE="TypeFlow/app/src/main/java/com/typeflow/keyboard/ui/ViewStyling.kt"
-
-          if [ ! -f "$FILE" ]; then
-            echo "ERROR: ViewStyling.kt not found!"
-            exit 1
-          fi
-
-          python3 - <<'PY'
-          from pathlib import Path
-
-          file = Path("TypeFlow/app/src/main/java/com/typeflow/keyboard/ui/ViewStyling.kt")
-          text = file.read_text()
-
-          text = text.replace(
-              "shape = GradientDrawable.OVAL",
-              "this.shape = GradientDrawable.OVAL"
-          )
-
-          file.write_text(text)
-          PY
-
-          echo "Checking fix:"
-          grep -n "this.shape = GradientDrawable.OVAL" "$FILE"
-
-      - name: Set up JDK 21
+      - name: Setup JDK 21
         uses: actions/setup-java@v5
         with:
           java-version: "21"
-          distribution: "temurin"
+          distribution: temurin
 
-      - name: Set up Gradle
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
 
-      - name: Check Java and Gradle
-        run: |
-          java -version
-          gradle --version
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: Accept Android licenses
-        run: |
-          yes | sdkmanager --licenses || true
+        run: yes | sdkmanager --licenses || true
 
-      - name: Build Debug APK
-        working-directory: TypeFlow
+      - name: Build APK
+        working-directory: SafariFlow
         run: |
           gradle clean assembleDebug --console=plain
 
       - name: Verify APK
         run: |
-          APK="TypeFlow/app/build/outputs/apk/debug/app-debug.apk"
-
-          if [ ! -f "$APK" ]; then
-            echo "ERROR: APK was not generated!"
-            exit 1
-          fi
-
-          ls -lh "$APK"
+          test -f SafariFlow/app/build/outputs/apk/debug/app-debug.apk
+          ls -lh SafariFlow/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: TypeFlow-APK
-          path: TypeFlow/app/build/outputs/apk/debug/app-debug.apk
+          name: SafariFlow-APK
+          path: SafariFlow/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
