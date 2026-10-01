@@ -34,8 +34,7 @@ jobs:
 
       - name: Build Debug APK
         working-directory: TypeFlow
-        run: gradle assembleDebug --stacktrace
-
+        run: gradle assembleDebug --console=plain
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
