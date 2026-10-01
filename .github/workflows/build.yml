@@ -13,31 +13,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Find project ZIP
-        run: |
-          echo "ZIP files found:"
-          find . -maxdepth 1 -type f -name "*.zip" -print
-
-      - name: Unzip fixed TypeFlow project
+      - name: Find and unzip TypeFlow project
         run: |
           set -e
 
-          ZIP_FILE="TypeFlow-SwiftKey-Dynamic-Themes-FIXED.zip"
+          ZIP_FILE="TypeFlow-Source.zip"
 
           if [ ! -f "$ZIP_FILE" ]; then
             echo "ERROR: $ZIP_FILE not found!"
-            echo "Available ZIP files:"
-            find . -maxdepth 1 -type f -name "*.zip" -print
+            find . -maxdepth 2 -type f -name "*.zip" -print
             exit 1
           fi
 
           rm -rf TypeFlow
           unzip -q -o "$ZIP_FILE"
 
-          echo "Project contents:"
+          echo "Project extracted:"
           ls -la TypeFlow
 
-      - name: Verify ViewStyling fix
+      - name: Fix ViewStyling.kt
         run: |
           set -e
 
@@ -48,10 +42,22 @@ jobs:
             exit 1
           fi
 
-          echo "Checking ViewStyling.kt..."
-          grep -n "this.shape = GradientDrawable.OVAL" "$FILE"
+          python3 - <<'PY'
+          from pathlib import Path
 
-          echo "ViewStyling fix verified."
+          file = Path("TypeFlow/app/src/main/java/com/typeflow/keyboard/ui/ViewStyling.kt")
+          text = file.read_text()
+
+          text = text.replace(
+              "shape = GradientDrawable.OVAL",
+              "this.shape = GradientDrawable.OVAL"
+          )
+
+          file.write_text(text)
+          PY
+
+          echo "Checking fix:"
+          grep -n "this.shape = GradientDrawable.OVAL" "$FILE"
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -69,17 +75,11 @@ jobs:
           java -version
           gradle --version
 
-      - name: Check Android SDK
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          ls -la "$ANDROID_HOME" || true
-
       - name: Accept Android licenses
         run: |
           yes | sdkmanager --licenses || true
 
-      - name: Build TypeFlow Debug APK
+      - name: Build Debug APK
         working-directory: TypeFlow
         run: |
           gradle clean assembleDebug --console=plain
@@ -93,7 +93,6 @@ jobs:
             exit 1
           fi
 
-          echo "APK generated successfully:"
           ls -lh "$APK"
 
       - name: Upload APK
