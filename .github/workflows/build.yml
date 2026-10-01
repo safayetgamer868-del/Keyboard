@@ -13,16 +13,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Find ZIP
+      - name: Check files
         run: |
           set -e
-          ls -lah *.zip
+          ls -lah
+          test -f SafariFlow-Browser.zip
 
       - name: Extract SafariFlow
         run: |
           set -e
           rm -rf SafariFlow
           unzip -q -o SafariFlow-Browser.zip
+          test -d SafariFlow
           ls -la SafariFlow
 
       - name: Setup JDK 21
@@ -36,11 +38,16 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Check Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          ls -la "$ANDROID_HOME"
+          sdkmanager --version || true
 
       - name: Accept Android licenses
-        run: yes | sdkmanager --licenses || true
+        run: |
+          yes | sdkmanager --licenses || true
 
       - name: Build APK
         working-directory: SafariFlow
@@ -49,6 +56,7 @@ jobs:
 
       - name: Verify APK
         run: |
+          set -e
           test -f SafariFlow/app/build/outputs/apk/debug/app-debug.apk
           ls -lh SafariFlow/app/build/outputs/apk/debug/app-debug.apk
 
