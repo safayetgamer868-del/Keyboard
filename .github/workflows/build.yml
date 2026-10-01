@@ -12,6 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Unzip project
+        run: |
+          ls -la
+          unzip -q -o "$(ls *.zip | head -1)"
+          ls -la TypeFlow
+
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
@@ -27,11 +33,12 @@ jobs:
         run: yes | sdkmanager --licenses || true
 
       - name: Build Debug APK
+        working-directory: TypeFlow
         run: gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: TypeFlow-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: TypeFlow/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
