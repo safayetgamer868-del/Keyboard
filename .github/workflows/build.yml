@@ -2,67 +2,73 @@ name: Build SafariFlow APK
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check files
+      - name: Check source ZIP
         run: |
           set -e
-          ls -lah
           test -f SafariFlow-Browser.zip
+          unzip -t SafariFlow-Browser.zip >/dev/null
 
-      - name: Extract SafariFlow
+      - name: Extract SafariFlow source
         run: |
           set -e
           rm -rf SafariFlow
           unzip -q -o SafariFlow-Browser.zip
-          test -d SafariFlow
-          ls -la SafariFlow
 
-      - name: Setup JDK 21
+          test -d SafariFlow
+          test -f SafariFlow/settings.gradle.kts
+          test -f SafariFlow/build.gradle.kts
+          test -f SafariFlow/app/build.gradle.kts
+
+      - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
-          java-version: "21"
           distribution: temurin
+          java-version: "21"
 
-      - name: Setup Gradle
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
 
-      - name: Check Android SDK
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          ls -la "$ANDROID_HOME"
-          sdkmanager --version || true
-
-      - name: Accept Android licenses
-        run: |
-          yes | sdkmanager --licenses || true
-
-      - name: Build APK
+      - name: Build debug APK
         working-directory: SafariFlow
         run: |
-          gradle clean assembleDebug --console=plain
+          gradle clean assembleDebug \
+            --no-daemon \
+            --stacktrace \
+            --console=plain
 
       - name: Verify APK
         run: |
           set -e
-          test -f SafariFlow/app/build/outputs/apk/debug/app-debug.apk
-          ls -lh SafariFlow/app/build/outputs/apk/debug/app-debug.apk
+
+          APK="SafariFlow/app/build/outputs/apk/debug/app-debug.apk"
+
+          test -f "$APK"
+          test -s "$APK"
+
+          echo "APK created successfully:"
+          ls -lh "$APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SafariFlow-APK
           path: SafariFlow/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
           retention-days: 30
