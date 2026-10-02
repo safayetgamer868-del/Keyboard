@@ -20,13 +20,16 @@ jobs:
       - name: Check source ZIP
         run: |
           set -e
+
           test -f SafariFlow-Full-Source.zip
           unzip -t SafariFlow-Full-Source.zip >/dev/null
-          echo "Source ZIP OK"
+
+          echo "SafariFlow source ZIP is valid."
 
       - name: Extract SafariFlow source
         run: |
           set -e
+
           rm -rf SafariFlow-Full
           unzip -q -o SafariFlow-Full-Source.zip
 
@@ -35,8 +38,7 @@ jobs:
           test -f SafariFlow-Full/build.gradle.kts
           test -f SafariFlow-Full/app/build.gradle.kts
 
-          echo "Source extracted successfully"
-          ls -la SafariFlow-Full
+          echo "SafariFlow source extracted successfully."
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -44,20 +46,25 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Set up Gradle 8.9
+      - name: Set up Gradle 9.6.0
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.9"
+          gradle-version: "9.6.0"
 
-      - name: Show Java and Gradle versions
+      - name: Show build environment
         run: |
+          echo "Java:"
           java -version
+
+          echo ""
+          echo "Gradle:"
           gradle --version
 
       - name: Build SafariFlow APK
         working-directory: SafariFlow-Full
         run: |
           set -e
+
           gradle clean assembleDebug \
             --no-daemon \
             --stacktrace \
